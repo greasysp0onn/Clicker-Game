@@ -1,0 +1,82 @@
+/* General Styles */
+body {
+  font-family: 'Arial', sans-serif;
+  text-align: center;
+  background: linear-gradient(to right, #000428, #004e92);
+  color: white;
+  margin: 0;
+  padding: 20px;
+  transition: background 1s ease;
+}
+
+/* Tabs */
+#tabs { display: flex; justify-content: center; margin-bottom: 20px; flex-wrap: wrap; }
+.tab-button {
+  background: #222; color: white; border: none; padding: 10px 20px;
+  cursor: pointer; margin: 2px; border-radius: 5px; transition: 0.3s;
+}
+.tab-button.active { background: #00c853; }
+
+.tab { display: none; }
+.tab.active { display: block; }
+
+/* Buttons & Inputs */
+button {
+  padding: 10px 20px;
+  margin: 5px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+button:hover { transform: scale(1.05); }
+
+/* Username input */
+#usernameContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#username {
+  padding: 8px 12px;
+  border-radius: 20px;
+  border: 2px solid #00c853;
+  background-color: #111;
+  color: white;
+  font-size: 16px;
+  outline: none;
+  transition: 0.3s;
+}
+
+#username:focus {
+  border-color: #00ffea;
+  box-shadow: 0 0 8px #00ffea;
+}
+
+#submitScoreButton {
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: none;
+  background: linear-gradient(45deg, #ff6ec7, #8338ec);
+  color: white;
+  font-size: 16px;
+}
+
+#submitScoreButton:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 12px #ff6ec7;
+}
+
+/* Floating numbers */
+.floatingText {
+  position: absolute;
+  color: #00ffea;
+  font-weight: bold;
+  font-size: 18px;
+  pointer-events: none;
+  transition: all 1s ease-out;
+}

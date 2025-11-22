@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Ultimate Cosmic Clicker</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>🌌 Ultimate Cosmic Clicker 🌌</h1>
+
+  <!-- Tabs -->
+  <div id="tabs">
+    <button class="tab-button active" data-tab="gameTab">Game</button>
+    <button class="tab-button" data-tab="shopTab">Shop</button>
+    <button class="tab-button" data-tab="achievementsTab">Achievements</button>
+    <button class="tab-button" data-tab="prestigeTab">Prestige</button>
+    <button class="tab-button" data-tab="leaderboardTab">Leaderboard</button>
+  </div>
+
+  <!-- Tab Contents -->
+  <div id="tabContents">
+    <!-- Game -->
+    <div id="gameTab" class="tab active">
+      <div id="moneyDisplay">$0</div>
+      <button id="clickButton">+ $1</button>
+      <button id="powerClickButton" class="hidden">🌟 POWER CLICK 🌟</button>
+    </div>
+
+    <!-- Shop -->
+    <div id="shopTab" class="tab">
+      <h2>🛒 Shop</h2>
+      <div id="shop"></div>
+    </div>
+
+    <!-- Achievements -->
+    <div id="achievementsTab" class="tab">
+      <h2>🏆 Achievements</h2>
+      <div id="achievements"></div>
+    </div>
+
+    <!-- Prestige -->
+    <div id="prestigeTab" class="tab">
+      <h2>🔁 Prestige</h2>
+      <button id="prestigeButton" class="hidden">RESET for Cosmic Boost</button>
+    </div>
+
+    <!-- Leaderboard -->
+    <div id="leaderboardTab" class="tab">
+      <h2>🌠 Leaderboard</h2>
+      <div id="usernameContainer">
+        <input type="text" id="username" placeholder="Enter your name" maxlength="12">
+        <button id="submitScoreButton">🚀 Submit</button>
+      </div>
+      <div id="leaderboard"></div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
