@@ -1,12 +1,8 @@
-// Use modern Firebase SDK
 import { initializeApp } from "firebase/app";
 import { getDatabase, ref, set, push, onValue, get } from "firebase/database";
 import { getAuth, signInAnonymously } from "firebase/auth";
-import { getAnalytics } from "firebase/analytics";
 
-// -------------------------
-// Firebase Config
-// -------------------------
+// --------------------- Firebase ---------------------
 const firebaseConfig = {
   apiKey: "AIzaSyBzed1T1fE5W_vKgjb7eb_yLFn5o2hgDvM",
   authDomain: "cosmicclicker-3092e.firebaseapp.com",
@@ -15,43 +11,41 @@ const firebaseConfig = {
   storageBucket: "cosmicclicker-3092e.firebasestorage.app",
   messagingSenderId: "343386999764",
   appId: "1:343386999764:web:9404344ae253a94f372441",
-  measurementId: "G-7Z9RCGYW9J"
 };
-
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
 const db = getDatabase(app);
 const auth = getAuth(app);
 
-// -------------------------
-// Game Variables
-// -------------------------
+// --------------------- Game Variables ---------------------
 let money = 0;
 let moneyPerClick = 1;
 let stage = 1;
 let prestigeMultiplier = 1;
 let achievements = [];
+let idleIncomePerSecond = 0;
+let lastSaveTime = Date.now();
 
-// -------------------------
-// DOM Elements
-// -------------------------
+// --------------------- DOM Elements ---------------------
 const moneyDisplay = document.getElementById("moneyDisplay");
+const incomeDisplay = document.getElementById("incomeDisplay");
+const stageDisplay = document.getElementById("stageDisplay");
 const clickButton = document.getElementById("clickButton");
 const shopDiv = document.getElementById("shop");
+const heroesDiv = document.getElementById("heroes");
 const achievementsDiv = document.getElementById("achievements");
 const prestigeButton = document.getElementById("prestigeButton");
+const prestigeInfo = document.getElementById("prestigeInfo");
 const usernameInput = document.getElementById("username");
 const submitScoreButton = document.getElementById("submitScoreButton");
 const leaderboardDiv = document.getElementById("leaderboard");
 const tabs = document.querySelectorAll(".tab-button");
 const tabContents = document.querySelectorAll(".tab-content");
 
-// -------------------------
-// Utility Functions
-// -------------------------
+// --------------------- Utility Functions ---------------------
 function updateMoney() {
   moneyDisplay.textContent = `$${money.toLocaleString()}`;
+  incomeDisplay.textContent = `Income: $${(idleIncomePerSecond * prestigeMultiplier).toFixed(1)}/sec`;
+  stageDisplay.textContent = `Stage ${stage}`;
 }
 
 function createFloatingText(amount) {
@@ -61,208 +55,147 @@ function createFloatingText(amount) {
   float.style.left = `${clickButton.offsetLeft + 20}px`;
   float.style.top = `${clickButton.offsetTop - 20}px`;
   document.body.appendChild(float);
-  setTimeout(() => {
-    float.style.top = `${clickButton.offsetTop - 60}px`;
-    float.style.opacity = 0;
-  }, 50);
+  setTimeout(() => { float.style.top = `${clickButton.offsetTop - 60}px`; float.style.opacity = 0; }, 50);
   setTimeout(() => float.remove(), 1000);
 }
 
-// -------------------------
-// Save / Load Functions
-// -------------------------
+// --------------------- Save / Load ---------------------
 function saveLocal() {
-  const saveData = { money, moneyPerClick, stage, prestigeMultiplier, achievements };
+  const saveData = { money, moneyPerClick, stage, prestigeMultiplier, achievements, lastSaveTime: Date.now() };
   localStorage.setItem('cosmicClickerSave', JSON.stringify(saveData));
 }
-
 function loadLocal() {
   const save = JSON.parse(localStorage.getItem('cosmicClickerSave'));
   if (save) {
-    money = save.money || 0;
-    moneyPerClick = save.moneyPerClick || 1;
-    stage = save.stage || 1;
-    prestigeMultiplier = save.prestigeMultiplier || 1;
-    achievements = save.achievements || [];
+    money = save.money; moneyPerClick = save.moneyPerClick; stage = save.stage;
+    prestigeMultiplier = save.prestigeMultiplier; achievements = save.achievements;
+    const elapsed = (Date.now() - save.lastSaveTime) / 1000;
+    money += idleIncomePerSecond * elapsed * prestigeMultiplier;
   }
 }
-
 function saveCloud() {
   const user = auth.currentUser;
   if (!user) return;
-  const saveData = { money, moneyPerClick, stage, prestigeMultiplier, achievements };
-  set(ref(db, 'saves/' + user.uid), saveData);
+  set(ref(db, 'saves/' + user.uid), { money, moneyPerClick, stage, prestigeMultiplier, achievements, lastSaveTime: Date.now() });
 }
-
 function loadCloud() {
   const user = auth.currentUser;
   if (!user) return;
   get(ref(db, 'saves/' + user.uid)).then(snapshot => {
     const data = snapshot.val();
-    if (data) {
-      money = data.money;
-      moneyPerClick = data.moneyPerClick;
-      stage = data.stage;
-      prestigeMultiplier = data.prestigeMultiplier;
-      achievements = data.achievements;
-      updateMoney();
-      renderShop();
-      renderAchievements();
-      saveLocal();
-    } else {
-      loadLocal();
-      updateMoney();
-      renderShop();
-      renderAchievements();
-    }
+    if (data) { money = data.money; moneyPerClick = data.moneyPerClick; stage = data.stage;
+      prestigeMultiplier = data.prestigeMultiplier; achievements = data.achievements; 
+      updateMoney(); renderShop(); renderHeroes(); renderAchievements(); saveLocal();
+    } else { loadLocal(); updateMoney(); renderShop(); renderHeroes(); renderAchievements(); }
   });
 }
 
-// -------------------------
-// Achievements
-// -------------------------
-function renderAchievements() {
-  achievementsDiv.innerHTML = "";
-  achievements.forEach(text => {
-    const ach = document.createElement("div");
-    ach.textContent = `🏆 ${text}`;
-    ach.style.color = "#ff6ec7";
-    achievementsDiv.appendChild(ach);
-  });
+// --------------------- Themes ---------------------
+function updateTheme() {
+  if (stage === 1) { document.body.style.background = "linear-gradient(to bottom, #0f2027, #203a43, #2c5364)"; clickButton.style.background="linear-gradient(to right, #8e2de2, #4a00e0)";}
+  else if(stage===2){document.body.style.background="linear-gradient(to bottom,#20002c,#cbb4d4)";clickButton.style.background="linear-gradient(to right,#ff512f,#dd2476)";}
+  else if(stage===3){document.body.style.background="linear-gradient(to bottom,#000428,#004e92)";clickButton.style.background="linear-gradient(to right,#00c6ff,#0072ff)";}
+  else {const colors=[["#ff0080","#7928ca"],["#00f260","#0575e6"],["#f7971e","#ffd200"]];const random=colors[Math.floor(Math.random()*colors.length)];
+  document.body.style.background=`linear-gradient(to bottom, ${random[0]}, ${random[1]})`; clickButton.style.background=`linear-gradient(to right, ${random[1]}, ${random[0]})`;}
 }
 
-function checkAchievements() {
-  if (money >= 100 && !achievements.includes("Rich")) {
-    achievements.push("Rich");
-    showAchievement("Rich: Earn $100!");
-  }
-  if (moneyPerClick >= 50 && !achievements.includes("Click Master")) {
-    achievements.push("Click Master");
-    showAchievement("Click Master: +50 Click!");
-  }
-}
-
-function showAchievement(text) {
-  const ach = document.createElement("div");
-  ach.textContent = `🏆 ${text}`;
-  ach.style.color = "#ff6ec7";
-  achievementsDiv.appendChild(ach);
-}
-
-// -------------------------
-// Upgrades
-// -------------------------
+// --------------------- Upgrades ---------------------
 const upgrades = [
-  { name: "Cursor", cost: 10, value: 1 },
-  { name: "Auto Clicker", cost: 100, value: 5 },
-  { name: "Mega Click", cost: 1000, value: 25 }
+  { name:"Cursor", cost:10, value:1 },
+  { name:"Auto Clicker", cost:100, value:5 },
+  { name:"Mega Click", cost:1000, value:25 }
 ];
-
-function renderShop() {
-  shopDiv.innerHTML = "";
-  upgrades.forEach((u) => {
-    const btn = document.createElement("button");
-    btn.textContent = `${u.name} (+$${u.value}) - $${u.cost}`;
-    btn.style.display = "block";
-    btn.style.margin = "5px 0";
-    btn.addEventListener("click", () => {
-      if (money >= u.cost) {
-        money -= u.cost;
-        moneyPerClick += u.value;
-        u.cost = Math.floor(u.cost * 1.5);
-        updateMoney();
-        renderShop();
-        animateButton(btn);
-        saveLocal();
-        saveCloud();
-      }
+function renderShop(){
+  shopDiv.innerHTML="";
+  upgrades.forEach(u=>{
+    const btn=document.createElement("button");
+    btn.textContent=`${u.name} (+$${u.value}) - $${u.cost}`;
+    btn.addEventListener("click", ()=>{
+      if(money>=u.cost){money-=u.cost; moneyPerClick+=u.value; u.cost=Math.floor(u.cost*1.5); updateMoney(); renderShop(); saveLocal(); saveCloud();}
     });
     shopDiv.appendChild(btn);
   });
 }
 
-function animateButton(btn) {
-  btn.style.transform = "scale(1.2)";
-  setTimeout(() => { btn.style.transform = "scale(1)"; }, 150);
+// --------------------- Heroes ---------------------
+const heroes = [
+  { name:"Cosmic Apprentice", cost:50, income:1, owned:0 },
+  { name:"Space Wizard", cost:500, income:10, owned:0 },
+  { name:"Galactic Overlord", cost:5000, income:100, owned:0 }
+];
+function renderHeroes(){
+  idleIncomePerSecond=0;
+  heroesDiv.innerHTML="";
+  heroes.forEach(h=>{
+    const btn=document.createElement("button");
+    btn.textContent=`${h.name} (${h.owned}) - $${h.cost} income: $${h.income}/sec`;
+    btn.addEventListener("click", ()=>{
+      if(money>=h.cost){money-=h.cost; h.owned++; h.cost=Math.floor(h.cost*1.5); updateMoney(); renderHeroes(); saveLocal(); saveCloud();}
+    });
+    heroesDiv.appendChild(btn);
+    idleIncomePerSecond += h.income*h.owned;
+  });
 }
 
-// -------------------------
-// Click Handler
-// -------------------------
-clickButton.addEventListener("click", () => {
+// --------------------- Achievements ---------------------
+function renderAchievements(){
+  achievementsDiv.innerHTML="";
+  achievements.forEach(a=>{
+    const ach=document.createElement("div"); ach.textContent=`🏆 ${a}`; achievementsDiv.appendChild(ach);
+  });
+}
+function checkAchievements(){
+  if(money>=100 && !achievements.includes("Rich")){achievements.push("Rich"); alert("Achievement unlocked: Rich!");}
+  if(moneyPerClick>=50 && !achievements.includes("Click Master")){achievements.push("Click Master"); alert("Achievement unlocked: Click Master!");}
+}
+
+// --------------------- Secret Endings ---------------------
+function checkSecretEndings(){
+  if(money>=10000 && !achievements.includes("Tycoon Ending")){achievements.push("Tycoon Ending"); alert("Secret Ending: Cosmic Tycoon!");}
+  if(prestigeMultiplier>=10 && !achievements.includes("Transcendent Ending")){achievements.push("Transcendent Ending"); alert("Secret Ending: Transcended Space-Time!");}
+}
+
+// --------------------- Click Handler ---------------------
+clickButton.addEventListener("click", ()=>{
   let totalClick = moneyPerClick * prestigeMultiplier;
   money += totalClick;
+  updateMoney(); createFloatingText(totalClick);
+  checkAchievements(); checkSecretEndings();
+  if(money>=stage*500){stage++; updateTheme();}
+  saveLocal(); saveCloud();
+});
+
+// --------------------- Prestige ---------------------
+prestigeButton.addEventListener("click", ()=>{
+  if(money>=1000){prestigeMultiplier++; money=0; moneyPerClick=1; stage=1; updateMoney(); renderShop(); renderHeroes(); saveLocal(); saveCloud(); alert(`Prestige! Multiplier x${prestigeMultiplier}`);}
+});
+
+// --------------------- Leaderboard ---------------------
+submitScoreButton.addEventListener("click", ()=>{
+  const name = usernameInput.value.trim()||"Anonymous";
+  push(ref(db,'leaderboard'),{name,score:money});
+  usernameInput.value="";
+});
+onValue(ref(db,'leaderboard'),snapshot=>{
+  const data=snapshot.val(); if(!data)return;
+  const arr=Object.values(data).sort((a,b)=>b.score-a.score).slice(0,10);
+  leaderboardDiv.innerHTML="";
+  arr.forEach((e,i)=>{const div=document.createElement("div"); div.textContent=`${i+1}. ${e.name} - $${e.score.toLocaleString()}`; leaderboardDiv.appendChild(div);});
+});
+
+// --------------------- Tabs ---------------------
+tabs.forEach(tab=>{
+  tab.addEventListener("click",()=>{
+    tabs.forEach(t=>t.classList.remove("active")); tab.classList.add("active");
+    const target=tab.dataset.target; tabContents.forEach(tc=>tc.style.display=tc.id===target?"block":"none");
+  });
+});
+
+// --------------------- Idle Loop ---------------------
+setInterval(()=>{
+  money += idleIncomePerSecond*prestigeMultiplier;
   updateMoney();
-  createFloatingText(totalClick);
-  checkAchievements();
-  saveLocal();
-  saveCloud();
-});
+},1000);
 
-// -------------------------
-// Prestige
-// -------------------------
-prestigeButton.addEventListener("click", () => {
-  if (money >= 1000) {
-    prestigeMultiplier++;
-    money = 0;
-    moneyPerClick = 1;
-    stage = 1;
-    updateMoney();
-    renderShop();
-    saveLocal();
-    saveCloud();
-    alert(`Prestige! Multiplier x${prestigeMultiplier}`);
-  }
-});
-
-// -------------------------
-// Leaderboard
-// -------------------------
-submitScoreButton.addEventListener("click", () => {
-  const name = usernameInput.value.trim() || "Anonymous";
-  push(ref(db, 'leaderboard'), { name, score: money });
-  usernameInput.value = "";
-});
-
-// Real-time leaderboard update
-onValue(ref(db, 'leaderboard'), (snapshot) => {
-  const data = snapshot.val();
-  if (!data) return;
-  const arr = Object.values(data);
-  arr.sort((a, b) => b.score - a.score);
-  leaderboardDiv.innerHTML = "";
-  arr.slice(0, 10).forEach((entry, index) => {
-    const div = document.createElement("div");
-    div.textContent = `${index + 1}. ${entry.name} - $${entry.score.toLocaleString()}`;
-    if (index === 0) div.style.color = "#FFD700";
-    else if (index === 1) div.style.color = "#C0C0C0";
-    else if (index === 2) div.style.color = "#cd7f32";
-    leaderboardDiv.appendChild(div);
-  });
-});
-
-// -------------------------
-// Tabs
-// -------------------------
-tabs.forEach(tab => {
-  tab.addEventListener("click", () => {
-    tabs.forEach(t => t.classList.remove("active"));
-    tab.classList.add("active");
-    const target = tab.dataset.target;
-    tabContents.forEach(tc => tc.style.display = tc.id === target ? "block" : "none");
-  });
-});
-
-// -------------------------
-// Start: Load Game
-// -------------------------
-signInAnonymously(auth)
-  .then(() => {
-    loadCloud();
-  })
-  .catch(err => console.error(err));
-
-renderShop();
-renderAchievements();
-updateMoney();
+// --------------------- Start ---------------------
+signInAnonymously(auth).then(()=>{loadCloud(); updateTheme(); renderShop(); renderHeroes(); renderAchievements(); updateMoney();});
