@@ -65,17 +65,14 @@ function createParticleEffect(x, y) {
   particle.style.left = `${x}px`;
   particle.style.top = `${y}px`;
   document.body.appendChild(particle);
-
   const angle = Math.random() * 2 * Math.PI;
   const distance = Math.random() * 50 + 20;
   const dx = Math.cos(angle) * distance;
   const dy = Math.sin(angle) * distance;
-
   particle.animate([
     { transform: `translate(0,0)`, opacity: 1 },
     { transform: `translate(${dx}px, ${-dy}px)`, opacity: 0 }
   ], { duration: 800, easing: "ease-out" });
-
   setTimeout(() => particle.remove(), 800);
 }
 
@@ -216,51 +213,71 @@ function triggerCosmicEvent() {
 clickButton.addEventListener("click", ()=>{
   let totalClick = moneyPerClick * prestigeMultiplier;
   money += totalClick;
-  updateMoney();
   createFloatingText(totalClick);
-  createParticleEffect(clickButton.offsetLeft + 50, clickButton.offsetTop + 20);
+  createParticleEffect(clickButton.offsetLeft + clickButton.offsetWidth/2, clickButton.offsetTop + clickButton.offsetHeight/2);
+  checkAchievements(); checkSecretEndings();
   triggerCosmicEvent();
-  checkAchievements();
-  checkSecretEndings();
-  if(money >= stage * 500){ stage++; updateTheme(); stageNarrative(); }
-  saveLocal(); saveCloud();
+  updateMoney(); saveLocal(); saveCloud();
 });
 
 // --------------------- Prestige ---------------------
 prestigeButton.addEventListener("click", ()=>{
   if(money>=1000){
-    prestigeMultiplier++; money=0; moneyPerClick=1; stage=1;
-    updateMoney(); renderShop(); renderHeroes(); saveLocal(); saveCloud();
-    alert(`Prestige! Multiplier x${prestigeMultiplier}`);
-  }
-});
-
-// --------------------- Leaderboard ---------------------
-submitScoreButton.addEventListener("click", ()=>{
-  const name = usernameInput.value.trim()||"Anonymous";
-  push(ref(db,'leaderboard'),{name,score:money});
-  usernameInput.value="";
-});
-onValue(ref(db,'leaderboard'),snapshot=>{
-  const data=snapshot.val(); if(!data)return;
-  const arr=Object.values(data).sort((a,b)=>b.score-a.score).slice(0,10);
-  leaderboardDiv.innerHTML="";
-  arr.forEach((e,i)=>{const div=document.createElement("div"); div.textContent=`${i+1}. ${e.name} - $${e.score.toLocaleString()}`; leaderboardDiv.appendChild(div);});
+    prestigeMultiplier++;
+    money=0; moneyPerClick=1; stage=1; achievements=[]; heroes.forEach(h=>{h.owned=0;h.income=Math.floor(h.income/2);h.cost=50;});
+    alert(`Prestige! Multiplier: x${prestigeMultiplier}`);
+    updateMoney(); renderShop(); renderHeroes(); renderAchievements(); saveLocal(); saveCloud();
+  } else { alert("Need at least $1000 to prestige!"); }
 });
 
 // --------------------- Tabs ---------------------
 tabs.forEach(tab=>{
-  tab.addEventListener("click",()=>{
-    tabs.forEach(t=>t.classList.remove("active")); tab.classList.add("active");
-    const target=tab.dataset.target; tabContents.forEach(tc=>tc.style.display=tc.id===target?"block":"none");
+  tab.addEventListener("click", ()=>{
+    tabs.forEach(t=>t.classList.remove("active"));
+    tab.classList.add("active");
+    const target = tab.dataset.target;
+    tabContents.forEach(tc=>{
+      tc.style.display = tc.id===target ? "block":"none";
+    });
   });
 });
 
-// --------------------- Idle Loop ---------------------
+// --------------------- Leaderboard ---------------------
+submitScoreButton.addEventListener("click", ()=>{
+  const name = usernameInput.value || "Anonymous";
+  push(ref(db,"leaderboard"), {name, score:money});
+  usernameInput.value="";
+});
+function renderLeaderboard(){
+  onValue(ref(db,"leaderboard"), snapshot=>{
+    leaderboardDiv.innerHTML="";
+    const data = snapshot.val();
+    if(data){
+      const sorted = Object.values(data).sort((a,b)=>b.score-a.score);
+      sorted.forEach(entry=>{
+        const div = document.createElement("div");
+        div.textContent = `${entry.name}: $${entry.score}`;
+        leaderboardDiv.appendChild(div);
+      });
+    }
+  });
+}
+
+// --------------------- Idle Income ---------------------
 setInterval(()=>{
   money += idleIncomePerSecond * prestigeMultiplier;
   updateMoney();
-},1000);
+  saveLocal();
+  saveCloud();
+}, 1000);
 
-// --------------------- Start ---------------------
-signInAnonymously(auth).then(()=>{loadCloud(); updateTheme(); renderShop(); renderHeroes(); renderAchievements(); updateMoney();});
+// --------------------- Initialization ---------------------
+signInAnonymously(auth).then(()=>{
+  loadCloud();
+  renderShop();
+  renderHeroes();
+  renderAchievements();
+  renderLeaderboard();
+  updateMoney();
+  updateTheme();
+});
