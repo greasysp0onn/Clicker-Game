@@ -7,53 +7,21 @@ body {
   padding: 20px;
 }
 
-h1 {
-  font-size: 3em;
-  margin-bottom: 20px;
-}
+h1 { font-size: 3em; margin-bottom: 10px; }
+#stageDisplay { font-size: 1.5em; margin-bottom: 5px; }
+#moneyDisplay { font-size: 2em; margin-bottom: 5px; }
+#incomeDisplay { font-size: 1.2em; margin-bottom: 20px; }
 
-#moneyDisplay {
-  font-size: 2em;
-  margin: 10px 0;
-}
+button { cursor: pointer; border: none; border-radius: 10px; color: #fff; padding: 10px 20px; margin: 5px; transition: transform 0.1s; }
+button:active { transform: scale(0.95); }
 
-#clickButton {
-  font-size: 1.5em;
-  padding: 15px 30px;
-  margin-bottom: 20px;
-  cursor: pointer;
-  border: none;
-  border-radius: 10px;
-  background: linear-gradient(to right, #ff512f, #dd2476);
-  color: white;
-  transition: transform 0.1s;
-}
+#clickButton { font-size: 1.5em; background: linear-gradient(to right, #ff512f, #dd2476); }
 
-#clickButton:active {
-  transform: scale(0.95);
-}
+.tabs { margin: 20px 0; }
+.tab-button { background: #444; padding: 10px 20px; border-radius: 5px; color: #fff; }
+.tab-button.active { background: #ff512f; }
 
-.tabs {
-  margin: 20px 0;
-}
-
-.tab-button {
-  padding: 10px 20px;
-  margin: 0 5px;
-  cursor: pointer;
-  border-radius: 5px;
-  border: none;
-  background: #444;
-  color: #fff;
-}
-
-.tab-button.active {
-  background: #ff512f;
-}
-
-.tab-content {
-  margin-top: 20px;
-}
+.tab-content { margin-top: 20px; }
 
 .floatingText {
   position: absolute;
@@ -63,3 +31,5 @@ h1 {
   pointer-events: none;
   transition: top 1s ease, opacity 1s ease;
 }
+
+#shop button, #heroes button { display: block; width: 200px; margin: 5px auto; }
