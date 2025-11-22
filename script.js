@@ -59,16 +59,37 @@ function createFloatingText(amount) {
   setTimeout(() => float.remove(), 1000);
 }
 
+function createParticleEffect(x, y) {
+  const particle = document.createElement("div");
+  particle.classList.add("particle");
+  particle.style.left = `${x}px`;
+  particle.style.top = `${y}px`;
+  document.body.appendChild(particle);
+
+  const angle = Math.random() * 2 * Math.PI;
+  const distance = Math.random() * 50 + 20;
+  const dx = Math.cos(angle) * distance;
+  const dy = Math.sin(angle) * distance;
+
+  particle.animate([
+    { transform: `translate(0,0)`, opacity: 1 },
+    { transform: `translate(${dx}px, ${-dy}px)`, opacity: 0 }
+  ], { duration: 800, easing: "ease-out" });
+
+  setTimeout(() => particle.remove(), 800);
+}
+
 // --------------------- Save / Load ---------------------
 function saveLocal() {
-  const saveData = { money, moneyPerClick, stage, prestigeMultiplier, achievements, lastSaveTime: Date.now() };
+  const saveData = { money, moneyPerClick, stage, prestigeMultiplier, achievements, lastSaveTime: Date.now(), heroes };
   localStorage.setItem('cosmicClickerSave', JSON.stringify(saveData));
 }
 function loadLocal() {
   const save = JSON.parse(localStorage.getItem('cosmicClickerSave'));
   if (save) {
     money = save.money; moneyPerClick = save.moneyPerClick; stage = save.stage;
-    prestigeMultiplier = save.prestigeMultiplier; achievements = save.achievements;
+    prestigeMultiplier = save.prestigeMultiplier; achievements = save.achievements; 
+    heroes = save.heroes || heroes;
     const elapsed = (Date.now() - save.lastSaveTime) / 1000;
     money += idleIncomePerSecond * elapsed * prestigeMultiplier;
   }
@@ -76,15 +97,17 @@ function loadLocal() {
 function saveCloud() {
   const user = auth.currentUser;
   if (!user) return;
-  set(ref(db, 'saves/' + user.uid), { money, moneyPerClick, stage, prestigeMultiplier, achievements, lastSaveTime: Date.now() });
+  set(ref(db, 'saves/' + user.uid), { money, moneyPerClick, stage, prestigeMultiplier, achievements, lastSaveTime: Date.now(), heroes });
 }
 function loadCloud() {
   const user = auth.currentUser;
   if (!user) return;
   get(ref(db, 'saves/' + user.uid)).then(snapshot => {
     const data = snapshot.val();
-    if (data) { money = data.money; moneyPerClick = data.moneyPerClick; stage = data.stage;
-      prestigeMultiplier = data.prestigeMultiplier; achievements = data.achievements; 
+    if (data) {
+      money = data.money; moneyPerClick = data.moneyPerClick; stage = data.stage;
+      prestigeMultiplier = data.prestigeMultiplier; achievements = data.achievements;
+      heroes = data.heroes || heroes;
       updateMoney(); renderShop(); renderHeroes(); renderAchievements(); saveLocal();
     } else { loadLocal(); updateMoney(); renderShop(); renderHeroes(); renderAchievements(); }
   });
@@ -92,15 +115,15 @@ function loadCloud() {
 
 // --------------------- Themes ---------------------
 function updateTheme() {
-  if (stage === 1) { document.body.style.background = "linear-gradient(to bottom, #0f2027, #203a43, #2c5364)"; clickButton.style.background="linear-gradient(to right, #8e2de2, #4a00e0)";}
+  if(stage===1){document.body.style.background="linear-gradient(to bottom,#0f2027,#203a43,#2c5364)";clickButton.style.background="linear-gradient(to right,#8e2de2,#4a00e0)";}
   else if(stage===2){document.body.style.background="linear-gradient(to bottom,#20002c,#cbb4d4)";clickButton.style.background="linear-gradient(to right,#ff512f,#dd2476)";}
   else if(stage===3){document.body.style.background="linear-gradient(to bottom,#000428,#004e92)";clickButton.style.background="linear-gradient(to right,#00c6ff,#0072ff)";}
-  else {const colors=[["#ff0080","#7928ca"],["#00f260","#0575e6"],["#f7971e","#ffd200"]];const random=colors[Math.floor(Math.random()*colors.length)];
+  else{const colors=[["#ff0080","#7928ca"],["#00f260","#0575e6"],["#f7971e","#ffd200"]];const random=colors[Math.floor(Math.random()*colors.length)];
   document.body.style.background=`linear-gradient(to bottom, ${random[0]}, ${random[1]})`; clickButton.style.background=`linear-gradient(to right, ${random[1]}, ${random[0]})`;}
 }
 
 // --------------------- Upgrades ---------------------
-const upgrades = [
+let upgrades = [
   { name:"Cursor", cost:10, value:1 },
   { name:"Auto Clicker", cost:100, value:5 },
   { name:"Mega Click", cost:1000, value:25 }
@@ -118,7 +141,7 @@ function renderShop(){
 }
 
 // --------------------- Heroes ---------------------
-const heroes = [
+let heroes = [
   { name:"Cosmic Apprentice", cost:50, income:1, owned:0 },
   { name:"Space Wizard", cost:500, income:10, owned:0 },
   { name:"Galactic Overlord", cost:5000, income:100, owned:0 }
@@ -126,15 +149,32 @@ const heroes = [
 function renderHeroes(){
   idleIncomePerSecond=0;
   heroesDiv.innerHTML="";
-  heroes.forEach(h=>{
+  heroes.forEach((h,i)=>{
     const btn=document.createElement("button");
     btn.textContent=`${h.name} (${h.owned}) - $${h.cost} income: $${h.income}/sec`;
     btn.addEventListener("click", ()=>{
       if(money>=h.cost){money-=h.cost; h.owned++; h.cost=Math.floor(h.cost*1.5); updateMoney(); renderHeroes(); saveLocal(); saveCloud();}
     });
     heroesDiv.appendChild(btn);
-    idleIncomePerSecond += h.income*h.owned;
+
+    // Merge button
+    const mergeBtn = document.createElement("button");
+    mergeBtn.textContent = `Merge 2 ${h.name}`;
+    mergeBtn.addEventListener("click", ()=>mergeHeroes(i));
+    heroesDiv.appendChild(mergeBtn);
+
+    idleIncomePerSecond += h.income * h.owned;
   });
+}
+
+function mergeHeroes(heroIndex) {
+  const hero = heroes[heroIndex];
+  if(hero.owned >= 2){
+    hero.owned -= 2;
+    hero.income *= 2;
+    alert(`Merged heroes into stronger ${hero.name}!`);
+    renderHeroes(); saveLocal(); saveCloud();
+  }
 }
 
 // --------------------- Achievements ---------------------
@@ -155,19 +195,44 @@ function checkSecretEndings(){
   if(prestigeMultiplier>=10 && !achievements.includes("Transcendent Ending")){achievements.push("Transcendent Ending"); alert("Secret Ending: Transcended Space-Time!");}
 }
 
+// --------------------- Narrative ---------------------
+function stageNarrative(){
+  if(stage===1) alert("Stage 1: Your cosmic cult begins!");
+  else if(stage===2) alert("Stage 2: Followers spread across galaxies!");
+  else if(stage===3) alert("Stage 3: Stars align with your cosmic power!");
+  else if(stage>3) alert(`Stage ${stage}: The universe trembles before you!`);
+}
+
+// --------------------- Cosmic Events ---------------------
+function triggerCosmicEvent() {
+  const rand = Math.random();
+  if(rand < 0.05){ money += 50; alert("🌠 Meteor Shower! +$50!"); }
+  else if(rand < 0.08){ money = Math.max(0, money - 25); alert("🕳 Black Hole! -$25!"); }
+  else if(rand < 0.10){ money *= 2; alert("💥 Supernova! Money doubled!"); }
+  updateMoney();
+}
+
 // --------------------- Click Handler ---------------------
 clickButton.addEventListener("click", ()=>{
   let totalClick = moneyPerClick * prestigeMultiplier;
   money += totalClick;
-  updateMoney(); createFloatingText(totalClick);
-  checkAchievements(); checkSecretEndings();
-  if(money>=stage*500){stage++; updateTheme();}
+  updateMoney();
+  createFloatingText(totalClick);
+  createParticleEffect(clickButton.offsetLeft + 50, clickButton.offsetTop + 20);
+  triggerCosmicEvent();
+  checkAchievements();
+  checkSecretEndings();
+  if(money >= stage * 500){ stage++; updateTheme(); stageNarrative(); }
   saveLocal(); saveCloud();
 });
 
 // --------------------- Prestige ---------------------
 prestigeButton.addEventListener("click", ()=>{
-  if(money>=1000){prestigeMultiplier++; money=0; moneyPerClick=1; stage=1; updateMoney(); renderShop(); renderHeroes(); saveLocal(); saveCloud(); alert(`Prestige! Multiplier x${prestigeMultiplier}`);}
+  if(money>=1000){
+    prestigeMultiplier++; money=0; moneyPerClick=1; stage=1;
+    updateMoney(); renderShop(); renderHeroes(); saveLocal(); saveCloud();
+    alert(`Prestige! Multiplier x${prestigeMultiplier}`);
+  }
 });
 
 // --------------------- Leaderboard ---------------------
@@ -193,41 +258,9 @@ tabs.forEach(tab=>{
 
 // --------------------- Idle Loop ---------------------
 setInterval(()=>{
-  money += idleIncomePerSecond*prestigeMultiplier;
+  money += idleIncomePerSecond * prestigeMultiplier;
   updateMoney();
 },1000);
 
 // --------------------- Start ---------------------
 signInAnonymously(auth).then(()=>{loadCloud(); updateTheme(); renderShop(); renderHeroes(); renderAchievements(); updateMoney();});
-
-function createParticleEffect(x, y) {
-  const particle = document.createElement("div");
-  particle.classList.add("particle");
-  particle.style.left = `${x}px`;
-  particle.style.top = `${y}px`;
-  document.body.appendChild(particle);
-
-  const angle = Math.random() * 2 * Math.PI;
-  const distance = Math.random() * 50 + 20;
-  const dx = Math.cos(angle) * distance;
-  const dy = Math.sin(angle) * distance;
-
-  particle.animate([
-    { transform: `translate(0,0)`, opacity: 1 },
-    { transform: `translate(${dx}px, ${-dy}px)`, opacity: 0 }
-  ], { duration: 800, easing: "ease-out" });
-
-  setTimeout(() => particle.remove(), 800);
-}
-
-// In click handler, add:
-clickButton.addEventListener("click", () => {
-  let totalClick = moneyPerClick * prestigeMultiplier;
-  money += totalClick;
-  updateMoney();
-  createFloatingText(totalClick);
-  createParticleEffect(clickButton.offsetLeft + 50, clickButton.offsetTop + 20); // particle effect
-  checkAchievements(); checkSecretEndings();
-  if(money >= stage * 500){stage++; updateTheme();}
-  saveLocal(); saveCloud();
-});
