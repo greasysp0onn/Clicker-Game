@@ -8,7 +8,6 @@ tabButtons.forEach(btn => {
   btn.addEventListener("click", () => {
     tabButtons.forEach(b => b.classList.remove("active"));
     tabs.forEach(t => t.classList.remove("active"));
-
     btn.classList.add("active");
     document.getElementById(btn.dataset.tab).classList.add("active");
   });
@@ -21,12 +20,9 @@ let money = 0;
 let moneyPerClick = 1;
 let stage = 1;
 let prestigeMultiplier = 1;
-
-// Achievements
 let achievements = [];
-
-// Leaderboard
 let leaderboard = [];
+let cosmicEventActive = false;
 
 // -------------------------
 // DOM Elements
@@ -40,6 +36,8 @@ const prestigeButton = document.getElementById("prestigeButton");
 const usernameInput = document.getElementById("username");
 const submitScoreButton = document.getElementById("submitScoreButton");
 const leaderboardDiv = document.getElementById("leaderboard");
+const cosmicOrb = document.getElementById("cosmicOrb");
+const bossContainer = document.getElementById("bossContainer");
 
 // -------------------------
 // Update Money Display
@@ -49,19 +47,14 @@ function updateMoney() {
 }
 
 // -------------------------
-// Floating "+ $X" animation
+// Floating Text Animation
 // -------------------------
 function createFloatingText(amount) {
   const float = document.createElement("div");
   float.textContent = `+ $${amount}`;
-  float.style.position = "absolute";
+  float.classList.add("floatingText");
   float.style.left = `${clickButton.offsetLeft + 20}px`;
   float.style.top = `${clickButton.offsetTop - 20}px`;
-  float.style.color = "#00ffea";
-  float.style.fontWeight = "bold";
-  float.style.fontSize = "18px";
-  float.style.pointerEvents = "none";
-  float.style.transition = "all 1s ease-out";
   document.body.appendChild(float);
   setTimeout(() => {
     float.style.top = `${clickButton.offsetTop - 60}px`;
@@ -71,27 +64,37 @@ function createFloatingText(amount) {
 }
 
 // -------------------------
-// Click Handler
+// Click Handlers
 // -------------------------
 clickButton.addEventListener("click", () => {
-  money += moneyPerClick * prestigeMultiplier;
+  let totalClick = moneyPerClick * prestigeMultiplier;
+  if (cosmicEventActive) totalClick *= 3; // Cosmic event multiplier
+  money += totalClick;
   updateMoney();
-  createFloatingText(moneyPerClick * prestigeMultiplier);
+  createFloatingText(totalClick);
   checkAchievements();
   checkStage();
+  maybeSpawnBoss();
 });
 
 // -------------------------
-// Power Click (hidden for now)
+// Cosmic Orb - Daily Bonus
 // -------------------------
-powerClickButton.addEventListener("click", () => {
-  money += moneyPerClick * prestigeMultiplier * 10;
-  updateMoney();
-  createFloatingText(moneyPerClick * prestigeMultiplier * 10);
+let lastBonus = 0;
+cosmicOrb.addEventListener("click", () => {
+  const now = new Date().getTime();
+  if (now - lastBonus > 24*60*60*1000) { // 24h cooldown
+    const bonus = Math.floor(Math.random() * 500 + 50);
+    money += bonus;
+    updateMoney();
+    createFloatingText(bonus);
+    alert(`Daily Cosmic Bonus! +$${bonus}`);
+    lastBonus = now;
+  } else alert("Cosmic Orb is resting. Come back tomorrow!");
 });
 
 // -------------------------
-// Upgrades (example)
+// Upgrades
 // -------------------------
 const upgrades = [
   { name: "Cursor", cost: 10, value: 1 },
@@ -101,7 +104,7 @@ const upgrades = [
 
 function renderShop() {
   shopDiv.innerHTML = "";
-  upgrades.forEach((u, i) => {
+  upgrades.forEach((u) => {
     const btn = document.createElement("button");
     btn.textContent = `${u.name} (+$${u.value}) - $${u.cost}`;
     btn.style.display = "block";
@@ -113,10 +116,16 @@ function renderShop() {
         u.cost = Math.floor(u.cost * 1.5);
         updateMoney();
         renderShop();
+        animateButton(btn);
       }
     });
     shopDiv.appendChild(btn);
   });
+}
+
+function animateButton(btn) {
+  btn.style.transform = "scale(1.2)";
+  setTimeout(() => { btn.style.transform = "scale(1)"; }, 150);
 }
 renderShop();
 
@@ -140,6 +149,8 @@ function showAchievement(text) {
   ach.style.color = "#ff6ec7";
   ach.style.margin = "5px";
   achievementsDiv.appendChild(ach);
+  document.body.style.animation = "flash 0.3s";
+  setTimeout(() => { document.body.style.animation = ""; }, 300);
 }
 
 // -------------------------
@@ -153,7 +164,7 @@ prestigeButton.addEventListener("click", () => {
     stage = 1;
     updateMoney();
     renderShop();
-    alert(`Prestige! Your multiplier is now x${prestigeMultiplier}`);
+    alert(`Prestige! Multiplier is now x${prestigeMultiplier}`);
   }
 });
 
@@ -163,8 +174,8 @@ prestigeButton.addEventListener("click", () => {
 submitScoreButton.addEventListener("click", () => {
   const name = usernameInput.value.trim() || "Anonymous";
   leaderboard.push({ name, score: money });
-  leaderboard.sort((a, b) => b.score - a.score);
-  if (leaderboard.length > 10) leaderboard.pop();
+  leaderboard.sort((a,b)=>b.score-a.score);
+  if (leaderboard.length>10) leaderboard.pop();
   renderLeaderboard();
   usernameInput.value = "";
 });
@@ -173,10 +184,10 @@ function renderLeaderboard() {
   leaderboardDiv.innerHTML = "";
   leaderboard.forEach((entry, index) => {
     const div = document.createElement("div");
-    div.textContent = `${index + 1}. ${entry.name} - $${entry.score.toLocaleString()}`;
-    if (index === 0) div.style.color = "#FFD700"; // Gold
-    else if (index === 1) div.style.color = "#C0C0C0"; // Silver
-    else if (index === 2) div.style.color = "#cd7f32"; // Bronze
+    div.textContent = `${index+1}. ${entry.name} - $${entry.score.toLocaleString()}`;
+    if(index===0) div.style.color="#FFD700";
+    else if(index===1) div.style.color="#C0C0C0";
+    else if(index===2) div.style.color="#cd7f32";
     leaderboardDiv.appendChild(div);
   });
 }
@@ -186,25 +197,82 @@ function renderLeaderboard() {
 // -------------------------
 function checkStage() {
   const body = document.body;
-  if (money >= 100 && stage === 1) {
-    stage = 2;
-    body.style.background = "linear-gradient(to right, #0f0c29, #302b63, #24243e)";
-  } else if (money >= 500 && stage === 2) {
-    stage = 3;
-    body.style.background = "linear-gradient(to right, #1f4037, #99f2c8)";
-  } else if (money >= 2000 && stage === 3) {
-    stage = 4;
-    body.style.background = "linear-gradient(to right, #0f0c29, #e8cdda)";
-  } else if (money >= 10000 && stage === 4) {
-    stage = 5;
-    body.style.background = "linear-gradient(to right, #200122, #6f0000)";
-  }
-  // Add more stages as needed
+  if (money>=100 && stage===1) { stage=2; body.style.background="#0f0c29"; }
+  else if (money>=500 && stage===2){ stage=3; body.style.background="#1f4037"; }
+  else if (money>=2000 && stage===3){ stage=4; body.style.background="#0f0c29"; }
+  else if (money>=10000 && stage===4){ stage=5; body.style.background="#200122"; }
 }
 
 // -------------------------
-// Initialize
+// Random Cosmic Events
 // -------------------------
-updateMoney();
-renderShop();
-renderLeaderboard();
+function startCosmicEvent() {
+  if (cosmicEventActive) return;
+  cosmicEventActive = true;
+  alert("🌟 Cosmic Event! Clicks x3 for 15 seconds!");
+  setTimeout(() => { cosmicEventActive=false; }, 15000);
+}
+setInterval(()=>{ if(Math.random()<0.01) startCosmicEvent(); }, 1000);
+
+// -------------------------
+// Mini Boss Battles
+// -------------------------
+let bossSpawned = false;
+let bossHealth = 0;
+function maybeSpawnBoss() {
+  if(!bossSpawned && money >= 1000 && Math.random()<0.05){
+    spawnBoss();
+  }
+}
+function spawnBoss() {
+  bossSpawned = true;
+  bossHealth = 50;
+  const boss = document.createElement("div");
+  boss.textContent = "👾 Cosmic Boss";
+  boss.style.fontSize = "32px";
+  boss.style.margin="10px";
+  bossContainer.appendChild(boss);
+  boss.addEventListener("click", () => {
+    bossHealth--;
+    createFloatingText(50);
+    if(bossHealth<=0){
+      boss.remove();
+      money += 500;
+      updateMoney();
+      bossSpawned=false;
+      alert("Boss defeated! +$500");
+    }
+  });
+}
+
+// -------------------------
+// Floating Star Background
+// -------------------------
+const canvas = document.getElementById("backgroundCanvas");
+const ctx = canvas.getContext("2d");
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let stars = [];
+for(let i=0;i<150;i++){
+  stars.push({
+    x: Math.random()*canvas.width,
+    y: Math.random()*canvas.height,
+    r: Math.random()*2+1,
+    speed: Math.random()*0.5
+  });
+}
+
+function animateStars(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  stars.forEach(s=>{
+    ctx.beginPath();
+    ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+    ctx.fillStyle="white";
+    ctx.fill();
+    s.y -= s.speed;
+    if(s.y<0) s.y=canvas.height;
+  });
+  requestAnimationFrame(animateStars);
+}
+animateStars();
