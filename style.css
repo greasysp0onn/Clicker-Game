@@ -33,3 +33,12 @@ button:active { transform: scale(0.95); }
 }
 
 #shop button, #heroes button { display: block; width: 200px; margin: 5px auto; }
+
+.particle {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: yellow;
+  pointer-events: none;
+}
