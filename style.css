@@ -1,0 +1,53 @@
+body {
+    margin: 0; padding: 20px;
+    font-family: Arial, sans-serif;
+    background: #111; color: white;
+    display: flex; justify-content: center;
+    transition: background 1s; overflow-x: hidden;
+}
+
+#game { max-width: 500px; width: 100%; text-align: center; }
+
+h1 { font-size: 36px; margin-bottom: 10px; }
+#moneyDisplay { font-size: 48px; margin: 20px 0; }
+
+button {
+    padding: 18px 36px; font-size: 22px;
+    border: none; border-radius: 10px; cursor: pointer;
+    transition: 0.2s, box-shadow 0.3s;
+}
+
+#clickButton { background: #00c853; color: white; }
+#clickButton:active { transform: scale(0.93); box-shadow: 0 0 20px yellow; }
+
+#powerClickButton { background: #ffea00; color: #111; margin-top: 10px; }
+#powerClickButton:active { transform: scale(0.95); box-shadow: 0 0 25px #ffea00; }
+
+#shop div { background: #222; margin: 8px 0; padding: 10px; border-radius: 8px; cursor: pointer; transition: 0.3s; }
+#shop div:hover { background: #333; box-shadow: 0 0 15px #0ff; }
+
+#achievements div { background: #1b1b1b; margin: 4px 0; padding: 6px; border-left: 5px solid gold; transition: 0.3s; }
+
+#prestigeButton { background: #ff1744; padding: 15px; color: white; width: 100%; font-size: 18px; }
+#prestigeButton:hover { box-shadow: 0 0 20px red; }
+
+#leaderboard { margin-top: 10px; text-align: left; max-height: 200px; overflow-y: auto; }
+#leaderboard div { padding: 4px; border-bottom: 1px solid #555; }
+#leaderboard div.top { color: #ffd700; font-weight: bold; text-shadow: 0 0 8px gold, 0 0 15px yellow; animation: glow 1s infinite alternate; }
+
+.hidden { display: none; }
+
+.particle {
+    position: absolute; pointer-events: none; font-weight: bold;
+    animation: rise 1s ease-out forwards; user-select: none;
+}
+
+@keyframes rise {
+    from { opacity: 1; transform: translateY(0) scale(1); }
+    to { opacity: 0; transform: translateY(-50px) scale(1.5); }
+}
+
+@keyframes glow {
+    from { text-shadow: 0 0 8px gold, 0 0 15px yellow; }
+    to { text-shadow: 0 0 15px gold, 0 0 25px yellow; }
+}
