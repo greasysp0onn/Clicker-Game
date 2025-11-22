@@ -1,43 +1,56 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Cosmic Clicker</title>
-  <link rel="stylesheet" href="style.css">
-  <!-- Firebase SDKs -->
-  <script type="module" src="script.js"></script>
+<meta charset="UTF-8">
+<title>Cosmic Clicker V2</title>
+<link rel="stylesheet" href="style.css">
+<script type="module" src="script.js"></script>
 </head>
 <body>
 
-  <h1>🌌 Cosmic Clicker 🌌</h1>
+<h1>🌌 Cosmic Clicker V2 🌌</h1>
+<div id="stageDisplay">Stage 1</div>
+<div id="moneyDisplay">$0</div>
+<div id="incomeDisplay">Income: $0/sec</div>
+<button id="clickButton">Click Me!</button>
 
-  <div id="moneyDisplay">$0</div>
-  <button id="clickButton">Click Me!</button>
+<!-- Tabs -->
+<div class="tabs">
+  <button class="tab-button active" data-target="shopTab">Shop</button>
+  <button class="tab-button" data-target="heroesTab">Heroes</button>
+  <button class="tab-button" data-target="leaderboardTab">Leaderboard</button>
+  <button class="tab-button" data-target="achievementsTab">Achievements</button>
+  <button class="tab-button" data-target="prestigeTab">Prestige</button>
+</div>
 
-  <!-- Tabs -->
-  <div class="tabs">
-    <button class="tab-button active" data-target="shopTab">Shop</button>
-    <button class="tab-button" data-target="leaderboardTab">Leaderboard</button>
-    <button class="tab-button" data-target="achievementsTab">Achievements</button>
-    <button class="tab-button" data-target="prestigeTab">Prestige</button>
-  </div>
+<!-- Tab Contents -->
+<div id="shopTab" class="tab-content">
+  <h2>Shop</h2>
+  <div id="shop"></div>
+</div>
 
-  <!-- Tab Contents -->
-  <div id="shopTab" class="tab-content"> <h2>Shop</h2> <div id="shop"></div> </div>
-  <div id="leaderboardTab" class="tab-content" style="display:none;">
-    <h2>Leaderboard</h2>
-    <input type="text" id="username" placeholder="Enter name">
-    <button id="submitScoreButton">Submit Score</button>
-    <div id="leaderboard"></div>
-  </div>
-  <div id="achievementsTab" class="tab-content" style="display:none;">
-    <h2>Achievements</h2>
-    <div id="achievements"></div>
-  </div>
-  <div id="prestigeTab" class="tab-content" style="display:none;">
-    <h2>Prestige</h2>
-    <button id="prestigeButton">Prestige</button>
-  </div>
+<div id="heroesTab" class="tab-content" style="display:none;">
+  <h2>Heroes</h2>
+  <div id="heroes"></div>
+</div>
+
+<div id="leaderboardTab" class="tab-content" style="display:none;">
+  <h2>Leaderboard</h2>
+  <input type="text" id="username" placeholder="Enter name">
+  <button id="submitScoreButton">Submit Score</button>
+  <div id="leaderboard"></div>
+</div>
+
+<div id="achievementsTab" class="tab-content" style="display:none;">
+  <h2>Achievements</h2>
+  <div id="achievements"></div>
+</div>
+
+<div id="prestigeTab" class="tab-content" style="display:none;">
+  <h2>Prestige</h2>
+  <button id="prestigeButton">Prestige</button>
+  <div id="prestigeInfo"></div>
+</div>
 
 </body>
 </html>
