@@ -199,3 +199,35 @@ setInterval(()=>{
 
 // --------------------- Start ---------------------
 signInAnonymously(auth).then(()=>{loadCloud(); updateTheme(); renderShop(); renderHeroes(); renderAchievements(); updateMoney();});
+
+function createParticleEffect(x, y) {
+  const particle = document.createElement("div");
+  particle.classList.add("particle");
+  particle.style.left = `${x}px`;
+  particle.style.top = `${y}px`;
+  document.body.appendChild(particle);
+
+  const angle = Math.random() * 2 * Math.PI;
+  const distance = Math.random() * 50 + 20;
+  const dx = Math.cos(angle) * distance;
+  const dy = Math.sin(angle) * distance;
+
+  particle.animate([
+    { transform: `translate(0,0)`, opacity: 1 },
+    { transform: `translate(${dx}px, ${-dy}px)`, opacity: 0 }
+  ], { duration: 800, easing: "ease-out" });
+
+  setTimeout(() => particle.remove(), 800);
+}
+
+// In click handler, add:
+clickButton.addEventListener("click", () => {
+  let totalClick = moneyPerClick * prestigeMultiplier;
+  money += totalClick;
+  updateMoney();
+  createFloatingText(totalClick);
+  createParticleEffect(clickButton.offsetLeft + 50, clickButton.offsetTop + 20); // particle effect
+  checkAchievements(); checkSecretEndings();
+  if(money >= stage * 500){stage++; updateTheme();}
+  saveLocal(); saveCloud();
+});
