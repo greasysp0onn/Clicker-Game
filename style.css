@@ -1,0 +1,53 @@
+body {
+  font-family: Arial, sans-serif;
+  text-align: center;
+  margin: 0;
+  padding: 0;
+  background-color: #f0f0f0;
+  color: #333;
+  transition: background-color 0.5s, color 0.5s;
+}
+
+body.dark {
+  background-color: #121212;
+  color: #f0f0f0;
+}
+
+header {
+  padding: 1rem;
+  background: #4CAF50;
+  color: white;
+}
+
+#click-button {
+  font-size: 2rem;
+  padding: 2rem;
+  margin: 2rem;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+
+#click-button:active {
+  transform: scale(1.1);
+}
+
+/* Tabs */
+.tabs {
+  margin-top: 1rem;
+}
+
+.tabs button {
+  padding: 0.5rem 1rem;
+  margin: 0 0.2rem;
+  cursor: pointer;
+}
+
+.tab-content .tab {
+  display: none;
+  margin-top: 1rem;
+}
+
+.tab-content .tab.active {
+  display: block;
+}
