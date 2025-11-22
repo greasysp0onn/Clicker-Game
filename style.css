@@ -1,53 +1,54 @@
+/* style.css */
 body {
-  font-family: Arial, sans-serif;
-  text-align: center;
-  margin: 0;
-  padding: 0;
-  background-color: #f0f0f0;
-  color: #333;
-  transition: background-color 0.5s, color 0.5s;
+    margin: 0;
+    font-family: 'Arial', sans-serif;
+    background: #f0e5d8;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
 }
 
-body.dark {
-  background-color: #121212;
-  color: #f0f0f0;
+#game-container {
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
+    padding: 20px;
 }
 
-header {
-  padding: 1rem;
-  background: #4CAF50;
-  color: white;
+#clicker-container {
+    flex: 2;
+    text-align: center;
 }
 
-#click-button {
-  font-size: 2rem;
-  padding: 2rem;
-  margin: 2rem;
-  border-radius: 50%;
-  cursor: pointer;
-  transition: transform 0.1s;
+#cookie-button {
+    font-size: 100px;
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.1s ease;
 }
 
-#click-button:active {
-  transform: scale(1.1);
+#cookie-button:active {
+    transform: scale(0.9);
 }
 
-/* Tabs */
-.tabs {
-  margin-top: 1rem;
+#cookie-count {
+    font-size: 24px;
+    margin-top: 10px;
 }
 
-.tabs button {
-  padding: 0.5rem 1rem;
-  margin: 0 0.2rem;
-  cursor: pointer;
+#sidebar {
+    flex: 1;
+    background: #fff2e6;
+    padding: 10px;
+    border-radius: 10px;
+    max-height: 80vh;
+    overflow-y: auto;
 }
 
-.tab-content .tab {
-  display: none;
-  margin-top: 1rem;
-}
-
-.tab-content .tab.active {
-  display: block;
+h2 {
+    margin: 10px 0;
 }

@@ -1,78 +1,113 @@
-// Game State
-let currency = 0;
-let cps = 0;
-let cpc = 1;
+// ===== Firebase Configuration =====
+const firebaseConfig = {
+    apiKey: "AIzaSyDyAEB7ARrLgs0fxjXgWDwB5_cI7gHFoSg",
+    authDomain: "cookie-clicker-9c602.firebaseapp.com",
+    databaseURL: "https://cookie-clicker-9c602-default-rtdb.firebaseio.com",
+    projectId: "cookie-clicker-9c602",
+    storageBucket: "cookie-clicker-9c602.appspot.com",
+    messagingSenderId: "657389329196",
+    appId: "1:657389329196:web:1d04dda9e0a027c886ea89"
+};
+
+// ===== Initialize Firebase =====
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const database = firebase.database();
+
+// ===== Game Variables =====
+let userId = null;
+let username = null;
+let totalCookies = 0;
+let cookiesPerClick = 1;
 let prestigePoints = 0;
-let lastTick = Date.now();
 
-// DOM Elements
-const currencyCount = document.getElementById("currency-count");
-const clickButton = document.getElementById("click-button");
-const cpcDisplay = document.getElementById("cpc");
-const cpsDisplay = document.getElementById("cps");
-const tabs = document.querySelectorAll(".tabs button");
-const tabContents = document.querySelectorAll(".tab");
-const themeToggle = document.getElementById("theme-toggle");
+// ===== DOM Elements =====
+const clickerBtn = document.getElementById("clicker");
+const totalCookiesSpan = document.getElementById("totalCookies");
+const leaderboardList = document.getElementById("leaderboard-list");
+const prestigeBtn = document.getElementById("prestige");
+const prestigeSpan = document.getElementById("prestigePoints");
 
-// Theme toggle
-themeToggle.addEventListener("click", () => {
-  document.body.classList.toggle("dark");
+// ===== Authentication =====
+auth.signInAnonymously().then(() => {
+    userId = auth.currentUser.uid;
+
+    // Username
+    username = localStorage.getItem("username");
+    if (!username) {
+        username = prompt("Enter a username (3-12 chars, alphanumeric):") || "Player";
+        if (username.length < 3 || username.length > 12) username = "Player";
+        localStorage.setItem("username", username);
+    }
+
+    // Load saved data
+    const save = JSON.parse(localStorage.getItem("save"));
+    if (save) {
+        totalCookies = save.totalCookies || 0;
+        prestigePoints = save.prestigePoints || 0;
+    }
+    updateDisplay();
+
+    // Start leaderboard listener
+    listenLeaderboard();
 });
 
-// Clicking
-clickButton.addEventListener("click", () => {
-  currency += cpc;
-  animateClick();
-  updateDisplay();
+// ===== Clicker Button =====
+clickerBtn.addEventListener("click", () => {
+    totalCookies += cookiesPerClick * (1 + prestigePoints * 0.1);
+    updateDisplay();
 });
 
-// Animate Click
-function animateClick() {
-  clickButton.style.transform = "scale(1.1)";
-  setTimeout(() => clickButton.style.transform = "scale(1)", 100);
-}
+// ===== Prestige Button =====
+prestigeBtn.addEventListener("click", () => {
+    const gained = Math.floor(totalCookies / 1000);
+    if (gained > 0) {
+        prestigePoints += gained;
+        totalCookies = 0;
+        updateDisplay();
+        submitScore();
+    }
+});
 
-// Update Display
+// ===== Update Display =====
 function updateDisplay() {
-  currencyCount.textContent = Math.floor(currency);
-  cpcDisplay.textContent = cpc;
-  cpsDisplay.textContent = cps;
+    totalCookiesSpan.textContent = totalCookies;
+    prestigeSpan.textContent = prestigePoints;
 }
 
-// Tabs
-tabs.forEach(tab => {
-  tab.addEventListener("click", () => {
-    tabs.forEach(t => t.classList.remove("active"));
-    tabContents.forEach(c => c.classList.remove("active"));
-    tab.classList.add("active");
-    document.getElementById(tab.dataset.tab).classList.add("active");
-  });
-});
-
-// Auto-Currency Tick
-function gameLoop() {
-  const now = Date.now();
-  const delta = (now - lastTick) / 1000; // seconds
-  currency += cps * delta;
-  lastTick = now;
-  updateDisplay();
-  requestAnimationFrame(gameLoop);
-}
-gameLoop();
-
-// Save/Load (localStorage)
-function saveGame() {
-  localStorage.setItem("clickerSave", JSON.stringify({currency, cps, cpc, prestigePoints}));
+// ===== Submit Score =====
+function submitScore() {
+    if (!userId) return;
+    database.ref("leaderboard/" + userId).set({
+        userId,
+        username,
+        totalCookies,
+        prestigePoints,
+        lastUpdated: firebase.database.ServerValue.TIMESTAMP
+    });
+    localStorage.setItem("save", JSON.stringify({ totalCookies, prestigePoints }));
 }
 
-function loadGame() {
-  const save = JSON.parse(localStorage.getItem("clickerSave"));
-  if (save) {
-    currency = save.currency;
-    cps = save.cps;
-    cpc = save.cpc;
-    prestigePoints = save.prestigePoints;
-  }
+// Auto-save and submit every 5 seconds
+setInterval(() => {
+    submitScore();
+}, 5000);
+
+// ===== Leaderboard Listener =====
+function listenLeaderboard() {
+    const leaderboardRef = database.ref("leaderboard");
+    leaderboardRef.on("value", snapshot => {
+        const users = [];
+        snapshot.forEach(child => users.push(child.val()));
+        users.sort((a, b) => b.totalCookies - a.totalCookies);
+
+        leaderboardList.innerHTML = "";
+        users.forEach((user, index) => {
+            const div = document.createElement("div");
+            div.classList.add("user");
+            if (user.userId === userId) div.classList.add("me");
+            div.textContent = `${index + 1}. ${user.username} - ${user.totalCookies} cookies - Prestige: ${user.prestigePoints}`;
+            leaderboardList.appendChild(div);
+        });
+    });
 }
-loadGame();
-setInterval(saveGame, 10000); // auto-save every 10s
